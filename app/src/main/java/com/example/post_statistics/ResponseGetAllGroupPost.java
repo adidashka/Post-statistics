@@ -2,7 +2,7 @@ package com.example.post_statistics;
 
 import java.util.ArrayList;
 
-public class ResponseGetAll__Group__Post {
+public class ResponseGetAllGroupPost {
     public ArrayList<User> data;
     public Meta meta;
 

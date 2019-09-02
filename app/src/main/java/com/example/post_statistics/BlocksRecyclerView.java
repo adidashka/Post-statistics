@@ -10,10 +10,10 @@ import android.widget.TextView;
 
 import java.util.List;
 
-public class Blocks_RecyclerView extends RecyclerView.Adapter {
+public class BlocksRecyclerView extends RecyclerView.Adapter {
     private List<Block> myBlocks;
 
-    public Blocks_RecyclerView(Context context, List<Block> myBlocks) {
+    public BlocksRecyclerView(Context context, List<Block> myBlocks) {
         this.myBlocks = myBlocks;
     }
 
@@ -41,8 +41,14 @@ public class Blocks_RecyclerView extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Block mBlock = myBlocks.get(position);
-            ((Block_without_users_ViewHolder) holder).bind(mBlock);
-            ((Block_with_users_ViewHolder) holder).bind(mBlock);
+        switch (holder.getItemViewType()) {
+            case Block.BLOCK_WITHOUT_USERS:
+                ((Block_without_users_ViewHolder) holder).bind(mBlock);
+                break;
+            case Block.BLOCK_WITH_USERS:
+                ((Block_with_users_ViewHolder) holder).bind(mBlock);
+                break;
+        }
     }
 
     @Override
