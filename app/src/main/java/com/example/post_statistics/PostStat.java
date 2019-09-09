@@ -21,30 +21,21 @@ public class PostStat {
 
     private StatisticsAPI statisticsAPI;
     private Retrofit retrofit;
-    private Long id_post;
-    private Long comments_count;
-    private Long likes_count;
-    private Long bookmarks_count;
-    private Long reposts_count;
-    private Long views_count;
-    private Long mentions_count;
+    private Long idPost;
+    private Long commentsCount;
+    private Long likesCount;
+    private Long bookmarksCount;
+    private Long repostsCount;
+    private Long viewsCount;
+    private Long mentionsCount;
 
-    private ArrayList<Block> mBlocks  = new ArrayList<Block>(6);
+    final ShowingBlock sb = new ShowingBlock();
 
-    private ArrayList<ResponseGetAllGroupPost.User> people = new ArrayList<>();
 
-    private ArrayList<Block.User> likers = new ArrayList<>();
-    private ArrayList<Block.User> commentators = new ArrayList<>();
-    private ArrayList<Block.User> mentions = new ArrayList<>();
-    private ArrayList<Block.User> reposts = new ArrayList<>();
+    public void getBlocks(){
 
-    private ArrayList<Block.User> users = new ArrayList<>();
+        final ShowingBlock sb = new ShowingBlock();
 
-    public PostStat(Context context) {
-        this.context = context;
-    }
-
-    public ArrayList<Block> getBlocks(){
         retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -56,26 +47,17 @@ public class PostStat {
             @Override
             public void onResponse(Call<ResponseGetInfoAboutPost> call, Response<ResponseGetInfoAboutPost> response) {
                 if (response.isSuccessful()) {
-                    id_post = response.body().id;
-                    comments_count = response.body().comments_count;
-                    likes_count = response.body().likes_count;
-                    bookmarks_count = response.body().bookmarks_count;
-                    reposts_count = response.body().reposts_count;
-                    views_count = response.body().views_count;
+                    idPost = response.body().id;
+                    bookmarksCount = response.body().bookmarks_count;
+                    viewsCount = response.body().views_count;
 
-
-                    //просмотры
-                    mBlocks.add(new Block(views_count, context.getResources().getString(R.string.looks), null));
+                    sb.showLooks(context, viewsCount);
+                    sb.showBookmarks(context, bookmarksCount);
 
                     getLikersBlock();
-                    getComentatorsBlock();
+                    getCommentatorsBlock();
                     getMentionsBlock();
                     getRepostsBlock();
-                    //закладки
-                    mBlocks.add(new Block(bookmarks_count, context.getResources().getString(R.string.bookmarks), null));
-
-
-
 
                 } else {
                     Toast.makeText(context, response.code(), Toast.LENGTH_LONG).show();
@@ -87,22 +69,20 @@ public class PostStat {
             }
         });
 
-
-
-        return mBlocks;
     }
 
     private void getLikersBlock(){
-        if ( likes_count!=0) {
-            IdPost idPost = new IdPost(id_post);
+
+            IdPost idPost = new IdPost(this.idPost);
             Call<ResponseGetAllGroupPost> call = statisticsAPI.getAllLikersPost(TOKEN, idPost);
             call.enqueue(new Callback<ResponseGetAllGroupPost>() {
                 @Override
                 public void onResponse(Call<ResponseGetAllGroupPost> call, Response<ResponseGetAllGroupPost> response) {
                     if (response.isSuccessful()) {
 
-                        likers = gettinUsersFromResponse(response);
-                        mBlocks.add(new Block(likes_count, context.getResources().getString(R.string.likes), likers));
+                        likesCount = response.body().meta.total;
+                        ArrayList<ResponseGetAllGroupPost.User> likers = response.body().data;
+                        sb.showLikes(context, likesCount, likers);
 
                     } else {
                         Toast.makeText(context, response.code(), Toast.LENGTH_LONG).show();
@@ -112,21 +92,20 @@ public class PostStat {
                 public void onFailure(Call<ResponseGetAllGroupPost> call, Throwable t) {
                 }
             });
-        }
-        else  mBlocks.add(new Block(likes_count, context.getResources().getString(R.string.likes), null));
     }
 
-    private void getComentatorsBlock(){
-        if (comments_count!=0) {
-            IdPost idPost = new IdPost(id_post);
+    private void getCommentatorsBlock(){
+
+            IdPost idPost = new IdPost(this.idPost);
             Call<ResponseGetAllGroupPost> call = statisticsAPI.getAllCommentatorsPost(TOKEN, idPost);
             call.enqueue(new Callback<ResponseGetAllGroupPost>() {
                 @Override
                 public void onResponse(Call<ResponseGetAllGroupPost> call, Response<ResponseGetAllGroupPost> response) {
                     if (response.isSuccessful()) {
 
-                        commentators = gettinUsersFromResponse(response);
-                        mBlocks.add(new Block(comments_count, context.getResources().getString(R.string.commentators), commentators));
+                        commentsCount = response.body().meta.total;
+                        ArrayList<ResponseGetAllGroupPost.User> commentators = response.body().data;
+                        sb.showComments(context, commentsCount, commentators);
 
                     } else {
                         Toast.makeText(context, response.code(), Toast.LENGTH_LONG).show();
@@ -136,25 +115,20 @@ public class PostStat {
                 public void onFailure(Call<ResponseGetAllGroupPost> call, Throwable t) {
                 }
             });
-        }
-        else  mBlocks.add(new Block(comments_count, context.getResources().getString(R.string.commentators), null));
     }
 
     private void getMentionsBlock(){
 
-        IdPost idPost = new IdPost(id_post);
+        IdPost idPost = new IdPost(this.idPost);
         Call<ResponseGetAllGroupPost> call = statisticsAPI.getAllMentionsPost(TOKEN, idPost);
         call.enqueue(new Callback<ResponseGetAllGroupPost>() {
             @Override
             public void onResponse(Call<ResponseGetAllGroupPost> call, Response<ResponseGetAllGroupPost> response) {
                 if (response.isSuccessful()) {
 
-                    mentions_count = response.body().meta.total;
-                    if (mentions_count!=0) {
-                        mentions = gettinUsersFromResponse(response);
-                        mBlocks.add(new Block(mentions_count, context.getResources().getString(R.string.mentions), mentions));
-                    }
-                    else mBlocks.add(new Block(mentions_count, context.getResources().getString(R.string.mentions), null));
+                    mentionsCount = response.body().meta.total;
+                    ArrayList<ResponseGetAllGroupPost.User> mentions = response.body().data;
+                    sb.showMentions(context, mentionsCount, mentions);
 
                 } else {
                     Toast.makeText(context, response.code(), Toast.LENGTH_LONG).show();
@@ -164,22 +138,20 @@ public class PostStat {
             public void onFailure(Call<ResponseGetAllGroupPost> call, Throwable t) {
             }
         });
-
-
-
     }
 
     private void getRepostsBlock(){
-        if (reposts_count!=0) {
-            IdPost idPost = new IdPost(id_post);
+
+            IdPost idPost = new IdPost(this.idPost);
             Call<ResponseGetAllGroupPost> call = statisticsAPI.getAllRepostrsPost(TOKEN, idPost);
             call.enqueue(new Callback<ResponseGetAllGroupPost>() {
                 @Override
                 public void onResponse(Call<ResponseGetAllGroupPost> call, Response<ResponseGetAllGroupPost> response) {
                     if (response.isSuccessful()) {
 
-                        reposts = gettinUsersFromResponse(response);
-                        mBlocks.add(new Block(reposts_count, context.getResources().getString(R.string.reposts), reposts));
+                        repostsCount = response.body().meta.total;
+                        ArrayList<ResponseGetAllGroupPost.User> reposts = response.body().data;
+                        sb.showReposts(context, repostsCount, reposts);
 
                     } else {
                         Toast.makeText(context, response.code(), Toast.LENGTH_LONG).show();
@@ -189,31 +161,10 @@ public class PostStat {
                 public void onFailure(Call<ResponseGetAllGroupPost> call, Throwable t) {
                 }
             });
-        }
-        else  mBlocks.add(new Block(reposts_count, context.getResources().getString(R.string.reposts), null));
-
     }
 
 
-
-
-    private ArrayList<Block.User> gettinUsersFromResponse (Response<ResponseGetAllGroupPost> response) {
-
-        people = response.body().data;
-
-        for (int i=0; i < response.body().meta.total; i++){
-
-            Long id = people.get(i).id;
-            String nickn = people.get(i).nickname;
-            String avatar = people.get(i).avatar_image.url_small;
-
-            users.add(new Block.User(id, nickn, avatar));
-        }
-        return users;
-
+    public PostStat(Context context) {
+        this.context = context;
     }
-
-
-
-
 }
